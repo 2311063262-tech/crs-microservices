@@ -1,130 +1,135 @@
-import { useEffect, useState } from 'react';
-import { getCourses } from './api/courseApi';
-import { PagedResponse, Course } from './types/course';
-import axios from 'axios';
-import { ApiErrorResponse } from './types/apiError';
+import { useState } from 'react';
+import { useCourses } from './api/useCourses';
+import SearchBox from './components/SearchBox';
+import CourseList from './components/CourseList';
+import Pagination from './components/Pagination';
 import './App.css';
 
 /**
- * App.tsx - PHIÊN BẢN TEST TẠM cho Buổi 5
- * Mục đích: test kết nối API, hiển thị JSON để xác nhận data
- * Sẽ được thay thế hoàn toàn bằng giao diện thật ở Buổi 6
+ * App.tsx - Component chinh rap toan bo giao dien Buoi 6
+ * 
+ * Quang ly state:
+ * - keyword: tu khoa tim kiem (state o App)
+ * - page: so trang hien tai (state o App)
+ * - useCourses hook: goi API, tra ve courses, totalPages, state, errorMessage, refetch
+ * 
+ * Luong xu ly:
+ * 1. User gop tu khoa -> SearchBox debounce -> handleSearch -> setKeyword + setPage(0)
+ *    (QUAN TRONG: phai reset page ve 0 de khong bi ket o trang cu)
+ * 2. Keyword hoac page thay doi -> useCourses hook useEffect chay -> goi getCourses()
+ * 3. Ket qua tra ve -> CourseList hien thi theo state (loading/success/empty/error)
+ * 4. User click trang -> handlePageChange -> setPage -> useCourses goi API
+ * 5. User bam "Thu lai" -> handleRetry -> useCourses.refetch()
  */
 function App() {
-  const [courses, setCourses] = useState<PagedResponse<Course> | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [keyword, setKeyword] = useState('');
+  const [page, setPage] = useState(0);
 
-  useEffect(() => {
-    const fetchCourses = async () => {
-      setLoading(true);
-      setError(null);
+  // Custom hook quan ly danh sach khoa hoc
+  const { courses, totalPages, state, errorMessage, refetch } = useCourses(
+    keyword,
+    page,
+    10
+  );
 
-      try {
-        const data = await getCourses();
-        setCourses(data);
-      } catch (err) {
-        // Kiểm tra xem có phải lỗi Axios không, và trích xuất thông báo lỗi
-        if (axios.isAxiosError<ApiErrorResponse>(err)) {
-          if (err.response?.data?.message) {
-            // Lỗi nghiệp vụ từ backend
-            setError(`Lỗi backend: ${err.response.data.message}`);
-          } else if (!err.response) {
-            // Lỗi mạng - không nhận được response nào
-            setError('Không kết nối được tới hệ thống. Vui lòng thử lại sau.');
-          } else {
-            // Lỗi khác
-            setError(`Lỗi: ${err.message}`);
-          }
-        } else {
-          // Lỗi không phải từ Axios
-          setError('Lỗi không xác định xảy ra');
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
+  /**
+   * Xu ly tim kiem - QUAN TRONG: phai setPage(0) de khong bi ket o trang cu
+   */
+  const handleSearch = (newKeyword: string) => {
+    setKeyword(newKeyword);
+    setPage(0); // Reset ve trang dau
+  };
 
-    fetchCourses();
-  }, []);
+  /**
+   * Xu ly doi trang
+   */
+  const handlePageChange = (newPage: number) => {
+    setPage(newPage);
+    // Auto scroll den top de user thay trang moi
+    window.scrollTo(0, 0);
+  };
+
+  /**
+   * Xu ly "Thu lai" - goi refetch tu hook
+   */
+  const handleRetry = () => {
+    refetch();
+  };
 
   return (
     <div style={styles.container}>
-      <h1>CRS Frontend - Buổi 5 Test</h1>
-      <p style={styles.subtitle}>
-        Đây là phiên bản test tạm. Mục đích: kiểm tra kết nối API gateway
-      </p>
+      <header style={styles.header}>
+        <h1 style={styles.title}>📚 Hệ thống đăng ký môn học (CRS)</h1>
+        <p style={styles.subtitle}>Buổi 6 - Danh sách, tìm kiếm, phân trang</p>
+      </header>
 
-      {loading && <p style={styles.loading}>Đang tải dữ liệu...</p>}
+      <main style={styles.main}>
+        {/* SearchBox - tim kiem voi debounce 400ms */}
+        <SearchBox onSearch={handleSearch} />
 
-      {error && (
-        <div style={styles.errorBox}>
-          <strong>❌ Lỗi:</strong> {error}
-        </div>
-      )}
+        {/* CourseList - hien thi danh sach theo 4 trang thai */}
+        <CourseList
+          courses={courses}
+          state={state}
+          errorMessage={errorMessage}
+          onRetry={handleRetry}
+        />
 
-      {courses && (
-        <div style={styles.responseBox}>
-          <h3>✅ Phản hồi từ API:</h3>
-          <pre style={styles.jsonPre}>
-            {JSON.stringify(courses, null, 2)}
-          </pre>
-          <p style={styles.info}>
-            Số khóa học: {courses.content.length} / Tổng cộng:{' '}
-            {courses.totalElements}
-          </p>
-        </div>
-      )}
+        {/* Pagination - phan trang */}
+        <Pagination
+          currentPage={page}
+          totalPages={totalPages}
+          onPageChange={handlePageChange}
+        />
+      </main>
+
+      <footer style={styles.footer}>
+        <p>
+          💡 Hiện tại: Từ khóa = "{keyword}" | Trang = {page + 1} / {totalPages}
+        </p>
+      </footer>
     </div>
   );
 }
 
 const styles = {
   container: {
+    minHeight: '100vh',
+    backgroundColor: '#f5f5f5',
+    display: 'flex',
+    flexDirection: 'column' as const,
+  },
+  header: {
+    backgroundColor: '#0066cc',
+    color: 'white',
+    padding: '20px',
+    textAlign: 'center' as const,
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
+  },
+  title: {
+    margin: '0 0 5px 0',
+    fontSize: '28px',
+  },
+  subtitle: {
+    margin: '0',
+    fontSize: '14px',
+    opacity: 0.9,
+  },
+  main: {
+    flex: 1,
     maxWidth: '1200px',
+    width: '100%',
     margin: '0 auto',
     padding: '20px',
-    fontFamily: 'Arial, sans-serif',
-  } as React.CSSProperties,
-  subtitle: {
-    color: '#888',
-    fontStyle: 'italic',
-  } as React.CSSProperties,
-  loading: {
-    color: '#0066cc',
-    fontSize: '16px',
-    fontWeight: 'bold',
-  } as React.CSSProperties,
-  errorBox: {
-    backgroundColor: '#ffcccc',
-    border: '2px solid #ff0000',
-    color: '#cc0000',
-    padding: '15px',
-    borderRadius: '5px',
-    marginBottom: '20px',
-  } as React.CSSProperties,
-  responseBox: {
-    backgroundColor: '#e6ffe6',
-    border: '2px solid #00cc00',
-    color: '#003300',
-    padding: '15px',
-    borderRadius: '5px',
-    marginTop: '20px',
-  } as React.CSSProperties,
-  jsonPre: {
-    backgroundColor: '#f0f0f0',
-    border: '1px solid #ccc',
-    padding: '10px',
-    borderRadius: '3px',
-    overflow: 'auto',
-    maxHeight: '400px',
+    boxSizing: 'border-box' as const,
+  },
+  footer: {
+    backgroundColor: '#333',
+    color: '#ccc',
+    padding: '15px 20px',
+    textAlign: 'center' as const,
     fontSize: '12px',
-  } as React.CSSProperties,
-  info: {
-    marginTop: '10px',
-    fontSize: '14px',
-    color: '#004400',
-  } as React.CSSProperties,
+  },
 };
 
 export default App;
