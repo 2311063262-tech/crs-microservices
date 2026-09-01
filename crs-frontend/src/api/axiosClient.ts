@@ -15,7 +15,7 @@ const axiosClient: AxiosInstance = axios.create({
 // Interceptor request - thêm token vào header nếu có
 axiosClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('crs_token');
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;
     }
