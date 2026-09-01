@@ -15,3 +15,17 @@ export interface PagedResponse<T> {
   number: number;
   size: number;
 }
+
+// Interface cho form values su dung o frontend - luu la string de de xu ly input rong
+export interface CourseFormValues {
+  tenMonHoc: string;
+  soTinChi: string; // luu so luong la string de cho phep input rong
+  soChoToiDa: string;
+}
+
+// Gia tri rong mac dinh de reset form
+export const emptyCourseForm: CourseFormValues = {
+  tenMonHoc: '',
+  soTinChi: '',
+  soChoToiDa: '',
+};
