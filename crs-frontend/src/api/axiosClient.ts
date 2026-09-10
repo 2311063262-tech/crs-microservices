@@ -24,11 +24,23 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor response - xử lý lỗi chung
+// Interceptor response - xử lý lỗi chung (thêm xử lý 401/403)
+// Nếu nhận 401/403: xóa crs_token + crs_user, redirect về /login
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    // Có thể thêm xử lý chung cho lỗi ở đây nếu cần
+    const resp = error?.response;
+    if (resp && (resp.status === 401 || resp.status === 403)) {
+      try {
+        localStorage.removeItem('crs_token');
+        localStorage.removeItem('crs_user');
+      } catch (e) {
+        // ignore
+      }
+      // Force redirect to login page so app resets (use full reload)
+      window.location.href = '/login';
+      return Promise.reject(error);
+    }
     return Promise.reject(error);
   }
 );
