@@ -7,97 +7,26 @@ import { useCourses } from '../api/useCourses';
 const CoursesPage: React.FC = () => {
   const [keyword, setKeyword] = React.useState('');
   const [page, setPage] = React.useState(0);
-
-  const { courses, totalPages, state, errorMessage, refetch } = useCourses(
-    keyword,
-    page,
-    10
-  );
-
-  const handleSearch = (newKeyword: string) => {
-    setKeyword(newKeyword);
-    setPage(0);
-  };
-
-  const handlePageChange = (newPage: number) => {
-    setPage(newPage);
-    window.scrollTo(0, 0);
-  };
-
-  const handleRetry = () => refetch();
+  const { courses, totalPages, state, errorMessage, refetch } = useCourses(keyword, page, 10);
 
   return (
     <div style={styles.container}>
-      <header style={styles.header}>
-        <h1 style={styles.title}>📚 Hệ thống đăng ký môn học (CRS)</h1>
-        <p style={styles.subtitle}>Danh sách môn học (công khai)</p>
-      </header>
-
+      <header style={styles.header}><h1>📚 Hệ thống đăng ký môn học (CRS)</h1><p>Danh sách môn học (công khai)</p></header>
       <main style={styles.main}>
-        <SearchBox onSearch={handleSearch} />
-
-        <CourseList
-          courses={courses}
-          state={state}
-          errorMessage={errorMessage}
-          onRetry={handleRetry}
-          // onEdit/onDelete intentionally not passed on public page
-        />
-
-        <Pagination
-          currentPage={page}
-          totalPages={totalPages}
-          onPageChange={handlePageChange}
-        />
+        <SearchBox onSearch={(value) => { setKeyword(value); setPage(0); }} />
+        <CourseList courses={courses} state={state} errorMessage={errorMessage} onRetry={refetch} />
+        <Pagination currentPage={page} totalPages={totalPages} onPageChange={(nextPage) => { setPage(nextPage); window.scrollTo(0, 0); }} />
       </main>
-
-      <footer style={styles.footer}>
-        <p>
-          💡 Hiện tại: Từ khóa = "{keyword}" | Trang = {page + 1} / {totalPages}
-        </p>
-      </footer>
+      <footer style={styles.footer}>Từ khóa = "{keyword}" | Trang = {page + 1} / {totalPages}</footer>
     </div>
   );
 };
 
 const styles = {
-  container: {
-    minHeight: '100vh',
-    backgroundColor: '#f5f5f5',
-    display: 'flex',
-    flexDirection: 'column' as const,
-  },
-  header: {
-    backgroundColor: '#0066cc',
-    color: 'white',
-    padding: '20px',
-    textAlign: 'center' as const,
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-  },
-  title: {
-    margin: '0 0 5px 0',
-    fontSize: '28px',
-  },
-  subtitle: {
-    margin: '0',
-    fontSize: '14px',
-    opacity: 0.9,
-  },
-  main: {
-    flex: 1,
-    maxWidth: '1200px',
-    width: '100%',
-    margin: '0 auto',
-    padding: '20px',
-    boxSizing: 'border-box' as const,
-  },
-  footer: {
-    backgroundColor: '#333',
-    color: '#ccc',
-    padding: '15px 20px',
-    textAlign: 'center' as const,
-    fontSize: '12px',
-  },
+  container: { minHeight: '100vh', backgroundColor: '#f5f5f5', display: 'flex', flexDirection: 'column' as const },
+  header: { backgroundColor: '#0066cc', color: 'white', padding: 20, textAlign: 'center' as const },
+  main: { flex: 1, maxWidth: 1200, width: '100%', margin: '0 auto', padding: 20, boxSizing: 'border-box' as const },
+  footer: { backgroundColor: '#333', color: '#ccc', padding: 15, textAlign: 'center' as const },
 };
 
 export default CoursesPage;

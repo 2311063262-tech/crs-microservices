@@ -1,4 +1,5 @@
-import axios, { AxiosInstance } from 'axios';
+import { AxiosInstance } from 'axios';
+import axios from 'axios';
 
 /**
  * Axios client instance - day la NOI DUY NHAT khai bao baseURL
@@ -12,7 +13,7 @@ const axiosClient: AxiosInstance = axios.create({
   },
 });
 
-// Interceptor request - thêm token vào header nếu có
+// Interceptor request - giữ nguyên cơ chế thêm token hiện có.
 axiosClient.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('crs_token');
@@ -24,23 +25,19 @@ axiosClient.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Interceptor response - xử lý lỗi chung (thêm xử lý 401/403)
-// Nếu nhận 401/403: xóa crs_token + crs_user, redirect về /login
+// Chỉ hết phiên (401) mới tự động xóa thông tin đăng nhập và đưa về login.
 axiosClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    const resp = error?.response;
-    if (resp && (resp.status === 401 || resp.status === 403)) {
-      try {
-        localStorage.removeItem('crs_token');
-        localStorage.removeItem('crs_user');
-      } catch (e) {
-        // ignore
+    if (error?.response?.status === 401) {
+      localStorage.removeItem('crs_token');
+      localStorage.removeItem('crs_user');
+
+      if (window.location.pathname !== '/login') {
+        window.location.href = '/login';
       }
-      // Force redirect to login page so app resets (use full reload)
-      window.location.href = '/login';
-      return Promise.reject(error);
     }
+
     return Promise.reject(error);
   }
 );
