@@ -4,12 +4,14 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
+  userId: number;
   token: string;
   username: string;
   role: 'ADMIN' | 'STUDENT';
 }
 
 export interface AuthUser {
+  id: number;
   username: string;
   role: 'ADMIN' | 'STUDENT';
 }
